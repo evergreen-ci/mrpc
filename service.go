@@ -69,16 +69,24 @@ func writeErrorReply(w io.Writer, err error) error {
 }
 
 func (s *Service) dispatchRequest(ctx context.Context, conn net.Conn) {
-	defer func() {
-		err := recovery.HandlePanicWithError(recover(), nil, "request handling")
-		if err != nil {
-			grip.Error(errors.Wrap(writeErrorReply(conn, err), "error writing reply after panic recovery"))
-		}
-	}()
 	var cancel context.CancelFunc
 	ctx, cancel = context.WithCancel(ctx)
 	defer cancel()
-	defer conn.Close()
+	defer func() {
+		err := recovery.HandlePanicWithError(recover(), nil, "request handling")
+		if err != nil {
+			grip.Error(errors.Wrap(err, "error during request handling"))
+			if writeErr := writeErrorReply(conn, err); writeErr != nil {
+				grip.Error(errors.Wrap(writeErr, "error writing reply after panic recovery"))
+				return
+			}
+		}
+		if err := conn.Close(); err != nil {
+			grip.Error(errors.Wrapf(err, "error closing connection from %s", conn.RemoteAddr()))
+			return
+		}
+		grip.Infof("closed connection from %s", conn.RemoteAddr())
+	}()
 
 	if c, ok := conn.(*tls.Conn); ok {
 		// we do this here so that we can get the SNI server name
@@ -92,10 +100,11 @@ func (s *Service) dispatchRequest(ctx context.Context, conn net.Conn) {
 	for {
 		m, err := mongowire.ReadMessage(conn)
 		if err != nil {
-			if err == io.EOF {
+			if errors.Cause(err) == io.EOF {
 				return
 			}
-			grip.Warning("problem reading message")
+			grip.Error(errors.Wrap(err, "problem reading message"))
+			return
 		}
 
 		scope := m.Scope()
