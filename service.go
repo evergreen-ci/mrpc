@@ -22,7 +22,7 @@ type Service interface {
 	Run(context.Context) error
 }
 
-type BasicService struct {
+type basicService struct {
 	addr     string
 	registry *OperationRegistry
 }
@@ -30,19 +30,19 @@ type BasicService struct {
 // NewService starts a generic wire protocol service listening on the given host
 // and port.
 func NewBasicService(host string, port int) Service {
-	return &BasicService{
+	return &basicService{
 		addr:     fmt.Sprintf("%s:%d", host, port),
 		registry: &OperationRegistry{ops: make(map[mongowire.OpScope]HandlerFunc)},
 	}
 }
 
-func (s *BasicService) Address() string { return s.addr }
+func (s *basicService) Address() string { return s.addr }
 
-func (s *BasicService) RegisterOperation(scope *mongowire.OpScope, h HandlerFunc) error {
+func (s *basicService) RegisterOperation(scope *mongowire.OpScope, h HandlerFunc) error {
 	return errors.WithStack(s.registry.Add(*scope, h))
 }
 
-func (s *BasicService) Run(ctx context.Context) error {
+func (s *basicService) Run(ctx context.Context) error {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		return errors.Wrapf(err, "problem listening on %s", s.addr)
@@ -66,7 +66,7 @@ func (s *BasicService) Run(ctx context.Context) error {
 	}
 }
 
-func (s *BasicService) dispatchRequest(ctx context.Context, conn net.Conn) {
+func (s *basicService) dispatchRequest(ctx context.Context, conn net.Conn) {
 	defer func() {
 		err := recovery.HandlePanicWithError(recover(), nil, "connection handling")
 		grip.Error(message.WrapError(err, "error during request handling"))
