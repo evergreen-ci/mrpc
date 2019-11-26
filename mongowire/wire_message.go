@@ -49,7 +49,7 @@ func (p *opMessagePayloadType0) DB() string {
 func (p *opMessagePayloadType0) Serialize() []byte {
 	buf := make([]byte, 1+getDocSize(p.Document))
 	buf[0] = p.Type() // kind
-	writeDocAt(1, p.Document, buf)
+	writeDocAt(p.Document, buf, 1)
 	return buf
 }
 
@@ -67,11 +67,11 @@ func (p *opMessagePayloadType1) Documents() []birch.Document { return p.Payload 
 func (p *opMessagePayloadType1) Serialize() []byte {
 	buf := make([]byte, m.Size)
 	buf[0] = p.Type()          // kind
-	writeInt32(p.Size, buf, 1) // size
-	loc := 5                   // kind + size
-	writeCString(p.Identifier, buf, &loc)
+	loc := 1
+	loc += writeInt32(p.Size, buf, loc)
+	loc += writeCString(p.Identifier, buf, loc)
 	for _, doc := range p.Payload { // payload
-		loc += writeDocAt(loc, doc, buf)
+		loc += writeDocAt(doc, buf, loc)
 	}
 	return buf
 }
@@ -95,7 +95,7 @@ func (m *opMessage) Serialize() []byte {
 	for _, section := range m.Items {
 		b := section.Serialize()
 		copy(buf[loc:], b)
-		loc += len(b) + 1
+		loc += len(b)
 	}
 
 	if m.Checksum != 0 && (m.Flags&1) == 1 {
@@ -179,7 +179,7 @@ func (h *MessageHeader) parseMsgBody(body []byte) (Message, error) {
 			loc += 4
 			section.Identifier = readCString(body[loc:])
 			// TODO: get DB/Collection from section.Identifier
-			loc += len(section.Identifier) + 1
+			loc += len(section.Identifier)
 
 			for remaining := section.Size - 4 - len(section.Identifier); remaining > 0; {
 				docSize := readInt32(body[loc+1:])
