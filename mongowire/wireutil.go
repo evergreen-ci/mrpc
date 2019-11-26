@@ -51,6 +51,7 @@ func readCString(b []byte) (string, error) {
 	return "", errors.New("c string with no terminator")
 }
 
+// kim: TODO: remove in-out parameter
 func writeCString(s string, buf []byte, loc *int) {
 	copy(buf[*loc:], s)
 	*loc = *loc + len(s)
@@ -63,6 +64,7 @@ func getDocSize(doc *birch.Document) int {
 	return int(size)
 }
 
+// kim: TODO: reorder parameters to doc, buf, loc
 func writeDocAt(loc int, doc *birch.Document, buf []byte) int {
 	out, _ := doc.WriteDocument(uint(loc), buf)
 	return int(out)

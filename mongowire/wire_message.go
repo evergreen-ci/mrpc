@@ -6,24 +6,33 @@ import (
 	"github.com/pkg/errors"
 )
 
-type opMessageSection interface {
+type OpMessageSection interface {
 	Type() uint8
 	Name() string
 	DB() string
-	Documents() []*birch.Document
+	Documents() []birch.Document
 	Serialize() []byte
 }
 
+const (
+	OpMessageSectionBody             = 0
+	OpMessageSectionDocumentSequence = 1
+)
+
 type opMessagePayloadType0 struct {
-	PayloadType uint8
-	Document    *birch.Document
+	Document *birch.Document
 }
 
-func (p *opMessagePayloadType0) Type() uint8                  { return 0 }
-func (p *opMessagePayloadType0) Name() string                 { return "" }
-func (p *opMessagePayloadType0) Documents() []*birch.Document { return []*birch.Document{p.Document} }
-func (p *opMessagePayloadType0) Serialize() []byte            { return nil }
+func (p *opMessagePayloadType0) Type() uint8 { return OpMessageSectionBody }
+func (p *opMessagePayloadType0) Name() string {
+	// kim: TODO: this is copied from OP_QUERY upconverted to OP_COMMAND.
+	return p.Document.ElementAt(0).Key()
+}
+func (p *opMessagePayloadType0) Documents() []birch.Document {
+	return []birch.Document{*p.Document.Copy()}
+}
 func (p *opMessagePayloadType0) DB() string {
+	// kim: QUESTION: where does this magic key come from?
 	key, err := p.Document.LookupErr("$db")
 	if err != nil {
 		return ""
@@ -37,18 +46,35 @@ func (p *opMessagePayloadType0) DB() string {
 	return val
 }
 
-type opMessagePayloadType1 struct {
-	PayloadType uint8
-	Size        int32
-	Identifier  string
-	Payload     []*birch.Document
+func (p *opMessagePayloadType0) Serialize() []byte {
+	buf := make([]byte, 1+getDocSize(p.Document))
+	buf[0] = p.Type() // kind
+	writeDocAt(1, p.Document, buf)
+	return buf
 }
 
-func (p *opMessagePayloadType1) Type() uint8                  { return 1 }
-func (p *opMessagePayloadType1) Name() string                 { return p.Identifier }
-func (p *opMessagePayloadType1) DB() string                   { return "" }
-func (p *opMessagePayloadType1) Documents() []*birch.Document { return p.Payload }
-func (p *opMessagePayloadType1) Serialize() []byte            { return nil }
+type opMessagePayloadType1 struct {
+	Size       int32
+	Identifier string
+	Payload    []birch.Document
+}
+
+func (p *opMessagePayloadType1) Type() uint8                 { return OpMessageSectionDocumentSequence }
+func (p *opMessagePayloadType1) Name() string                { return p.Identifier }
+func (p *opMessagePayloadType1) DB() string                  { return NamespaceToDB(p.Identifier) }
+func (p *opMessagePayloadType1) Documents() []birch.Document { return p.Payload }
+
+func (p *opMessagePayloadType1) Serialize() []byte {
+	buf := make([]byte, m.Size)
+	buf[0] = p.Type()          // kind
+	writeInt32(p.Size, buf, 1) // size
+	loc := 5                   // kind + size
+	writeCString(p.Identifier, buf, &loc)
+	for _, doc := range p.Payload { // payload
+		loc += writeDocAt(loc, doc, buf)
+	}
+	return buf
+}
 
 func (m *opMessage) Header() MessageHeader { return m.header }
 func (m *opMessage) HasResponse() bool     { return m.Flags > 1 }
@@ -58,20 +84,35 @@ func (m *opMessage) Scope() *OpScope {
 	}
 }
 
-func (m *opMessage) Serialize() []byte { return nil }
+func (m *opMessage) Serialize() []byte {
+	buf := make([]byte, m.header.Size)
+	m.header.WriteInto(buf)
 
-// TODO:
-//   - finish implementation of parseMsgMessageBody
-//   - implement message interface
-//      - Serialize
+	loc := 16 /* header */
+	writeInt32(m.Flags, buf, loc)
+	loc += 4
 
-func NewOpMessage(moreToCome bool, documents []*birch.Document, items ...model.SequenceItem) Message {
+	for _, section := range m.Items {
+		b := section.Serialize()
+		copy(buf[loc:], b)
+		loc += len(b) + 1
+	}
+
+	if m.Checksum != 0 && (m.Flags&1) == 1 {
+		writeInt32(m.Checksum, buf, loc)
+		loc += 4
+	}
+
+	return buf
+}
+
+func NewOpMessage(moreToCome bool, documents []birch.Document, items ...model.SequenceItem) Message {
 	msg := &opMessage{
 		header: MessageHeader{
 			OpCode:    OP_MSG,
 			RequestID: 19,
 		},
-		Items: make([]opMessageSection, len(documents)),
+		Items: make([]OpMessageSection, len(documents)),
 	}
 
 	for idx := range documents {
@@ -101,5 +142,67 @@ func NewOpMessage(moreToCome bool, documents []*birch.Document, items ...model.S
 }
 
 func (h *MessageHeader) parseMsgBody(body []byte) (Message, error) {
-	return nil, errors.New("op_message parsing not implemented")
+	if len(body) < 4 {
+		return nil, errors.New("invalid op message - message must have length of at least 4 bytes")
+	}
+
+	var (
+		loc int
+		err error
+	)
+
+	msg := &opMessage{
+		header: *h,
+	}
+
+	msg.Flags = readInt32(body[loc:])
+	loc += 4
+	checksumPresent := (msg.Flags & 1) == 1
+
+	for loc < len(body)-4 {
+		kind := int32(body[loc])
+		loc++
+
+		var err error
+		switch kind {
+		case OpMessageSectionBody:
+			section := &opMessagePayloadType0{}
+			// Payload is standard command request and reply body.
+			docSize := readInt32(body[loc:])
+			section.Document, err = birch.ReadDocument(body[loc : loc+docSize])
+			// TODO: get DB/Collection from section.Document, which is an OP_COMMAND
+			loc += getDocSize(doc)
+			msg.Items = append(msg.Items, section)
+		case OpMessageSectionDocumentSequence:
+			section := &opMessagePayloadType1{}
+			section.Size = readInt32(body[loc:])
+			loc += 4
+			section.Identifier = readCString(body[loc:])
+			// TODO: get DB/Collection from section.Identifier
+			loc += len(section.Identifier) + 1
+
+			for remaining := section.Size - 4 - len(section.Identifier); remaining > 0; {
+				docSize := readInt32(body[loc+1:])
+				doc, err := birch.ReadDocument(body[loc : loc+docSize])
+				if err != nil {
+					return nil, errors.Wrap(err, "could not read payload document")
+				}
+				section.Payload = append(section.Payload, *doc.Copy())
+				remaining -= docSize
+				loc += docSize
+			}
+			msg.Items = append(msg.Items, section)
+		default:
+			return nil, errors.Errorf("unrecognized kind bit %d", kind)
+		}
+	}
+
+	if checksumPresent && loc == len(body)-4 {
+		msg.Checksum = readInt32(body[loc:])
+		loc += 4
+	}
+
+	m.header.Size = loc
+
+	return msg, nil
 }
