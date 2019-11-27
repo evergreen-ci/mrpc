@@ -41,6 +41,7 @@ const (
 	// handlers for the different "buildinfo" commands
 	buildInfoCommand               = "buildInfo"
 	BuildinfoCommand               = "buildinfo"
+	getCmdLineOptsCommand          = "getCmdLineOpts"
 	getLogCommand                  = "getLog"
 	getFreeMonitoringStatusCommand = "getFreeMonitoringStatus"
 	replSetGetStatusCommand        = "replSetGetStatus"
@@ -59,6 +60,7 @@ func (s *shellService) registerHandlers() error {
 		replSetGetStatusCommand:        s.replSetGetStatus,
 		getFreeMonitoringStatusCommand: s.getFreeMonitoringStatus,
 		listCollectionsCommand:         s.listCollections,
+		getCmdLineOptsCommand:          s.getCmdLineOpts,
 	} {
 		if err := s.RegisterOperation(&mongowire.OpScope{
 			Type:    mongowire.OP_COMMAND,
@@ -85,12 +87,22 @@ func (s *shellService) whatsMyURI(ctx context.Context, w io.Writer, msg mongowir
 }
 
 func (s *shellService) buildInfo(ctx context.Context, w io.Writer, msg mongowire.Message) {
+	// kim: TODO: respond with current shell version? Not sure what the correct
+	// version to send back here is.
 	resp, err := ResponseToMessage(makeBuildInfoResponse("0.0.0"))
 	if err != nil {
 		WriteErrorResponse(ctx, w, errors.Wrap(err, "could not make response"), buildInfoCommand)
 		return
 	}
 	WriteResponse(ctx, w, resp, buildInfoCommand)
+}
+
+func (s *shellService) getCmdLineOpts(ctx context.Context, w io.Writer, msg mongowire.Message) {
+	WriteNotOKResponse(ctx, w, getCmdLineOptsCommand)
+}
+
+func (s *shellService) getFreeMonitoringStatus(ctx context.Context, w io.Writer, msg mongowire.Message) {
+	WriteNotOKResponse(ctx, w, getFreeMonitoringStatusCommand)
 }
 
 func (s *shellService) getLog(ctx context.Context, w io.Writer, msg mongowire.Message) {
@@ -101,14 +113,10 @@ func (s *shellService) getLog(ctx context.Context, w io.Writer, msg mongowire.Me
 	WriteResponse(ctx, w, resp, getLogCommand)
 }
 
-func (s *shellService) getFreeMonitoringStatus(ctx context.Context, w io.Writer, msg mongowire.Message) {
-	WriteNotOKResponse(ctx, w, getFreeMonitoringStatusCommand)
+func (s *shellService) listCollections(ctx context.Context, w io.Writer, msg mongowire.Message) {
+	WriteNotOKResponse(ctx, w, listCollectionsCommand)
 }
 
 func (s *shellService) replSetGetStatus(ctx context.Context, w io.Writer, msg mongowire.Message) {
 	WriteNotOKResponse(ctx, w, replSetGetStatusCommand)
-}
-
-func (s *shellService) listCollections(ctx context.Context, w io.Writer, msg mongowire.Message) {
-	WriteNotOKResponse(ctx, w, listCollectionsCommand)
 }
