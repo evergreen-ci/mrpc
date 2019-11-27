@@ -49,7 +49,7 @@ func (p *opMessagePayloadType0) DB() string {
 func (p *opMessagePayloadType0) Serialize() []byte {
 	buf := make([]byte, 1+getDocSize(p.Document))
 	buf[0] = p.Type() // kind
-	writeDocAt(p.Document, buf, 1)
+	_ = writeDocAt(p.Document, buf, 1)
 	return buf
 }
 
@@ -65,13 +65,13 @@ func (p *opMessagePayloadType1) DB() string                  { return NamespaceT
 func (p *opMessagePayloadType1) Documents() []birch.Document { return p.Payload }
 
 func (p *opMessagePayloadType1) Serialize() []byte {
-	buf := make([]byte, m.Size)
-	buf[0] = p.Type()          // kind
+	buf := make([]byte, p.Size)
+	buf[0] = p.Type() // kind
 	loc := 1
 	loc += writeInt32(p.Size, buf, loc)
 	loc += writeCString(p.Identifier, buf, loc)
 	for _, doc := range p.Payload { // payload
-		loc += writeDocAt(doc, buf, loc)
+		loc += writeDocAt(&doc, buf, loc)
 	}
 	return buf
 }
@@ -89,8 +89,7 @@ func (m *opMessage) Serialize() []byte {
 	m.header.WriteInto(buf)
 
 	loc := 16 /* header */
-	writeInt32(m.Flags, buf, loc)
-	loc += 4
+	loc += writeInt32(int32(m.Flags), buf, loc)
 
 	for _, section := range m.Items {
 		b := section.Serialize()
@@ -99,8 +98,7 @@ func (m *opMessage) Serialize() []byte {
 	}
 
 	if m.Checksum != 0 && (m.Flags&1) == 1 {
-		writeInt32(m.Checksum, buf, loc)
-		loc += 4
+		loc += writeInt32(m.Checksum, buf, loc)
 	}
 
 	return buf
@@ -117,8 +115,8 @@ func NewOpMessage(moreToCome bool, documents []birch.Document, items ...model.Se
 
 	for idx := range documents {
 		msg.Items[idx] = &opMessagePayloadType0{
-			PayloadType: 0,
-			Document:    documents[idx],
+			// PayloadType: 0,
+			Document: documents[idx].Copy(),
 		}
 	}
 
@@ -129,8 +127,8 @@ func NewOpMessage(moreToCome bool, documents []birch.Document, items ...model.Se
 	for idx := range items {
 		item := items[idx]
 		it := &opMessagePayloadType1{
-			PayloadType: 1,
-			Identifier:  item.Identifier,
+			// PayloadType: 1,
+			Identifier: item.Identifier,
 		}
 		for _, i := range item.Documents {
 			it.Size += int32(getDocSize(&i))
@@ -146,16 +144,12 @@ func (h *MessageHeader) parseMsgBody(body []byte) (Message, error) {
 		return nil, errors.New("invalid op message - message must have length of at least 4 bytes")
 	}
 
-	var (
-		loc int
-		err error
-	)
-
 	msg := &opMessage{
 		header: *h,
 	}
 
-	msg.Flags = readInt32(body[loc:])
+	loc := 0
+	msg.Flags = uint32(readInt32(body[loc:]))
 	loc += 4
 	checksumPresent := (msg.Flags & 1) == 1
 
@@ -168,21 +162,24 @@ func (h *MessageHeader) parseMsgBody(body []byte) (Message, error) {
 		case OpMessageSectionBody:
 			section := &opMessagePayloadType0{}
 			// Payload is standard command request and reply body.
-			docSize := readInt32(body[loc:])
+			docSize := int(readInt32(body[loc:]))
 			section.Document, err = birch.ReadDocument(body[loc : loc+docSize])
 			// TODO: get DB/Collection from section.Document, which is an OP_COMMAND
-			loc += getDocSize(doc)
+			loc += getDocSize(section.Document)
 			msg.Items = append(msg.Items, section)
 		case OpMessageSectionDocumentSequence:
 			section := &opMessagePayloadType1{}
 			section.Size = readInt32(body[loc:])
 			loc += 4
-			section.Identifier = readCString(body[loc:])
+			section.Identifier, err = readCString(body[loc:])
+			if err != nil {
+				return nil, errors.Wrap(err, "could not read identifier")
+			}
 			// TODO: get DB/Collection from section.Identifier
 			loc += len(section.Identifier)
 
-			for remaining := section.Size - 4 - len(section.Identifier); remaining > 0; {
-				docSize := readInt32(body[loc+1:])
+			for remaining := int(section.Size) - 4 - len(section.Identifier); remaining > 0; {
+				docSize := int(readInt32(body[loc+1:]))
 				doc, err := birch.ReadDocument(body[loc : loc+docSize])
 				if err != nil {
 					return nil, errors.Wrap(err, "could not read payload document")
@@ -202,7 +199,7 @@ func (h *MessageHeader) parseMsgBody(body []byte) (Message, error) {
 		loc += 4
 	}
 
-	m.header.Size = loc
+	msg.header.Size = int32(loc)
 
 	return msg, nil
 }

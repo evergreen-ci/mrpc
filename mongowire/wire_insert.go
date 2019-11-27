@@ -35,6 +35,7 @@ func (m *insertMessage) Serialize() []byte {
 	buf := make([]byte, size)
 	m.header.WriteInto(buf)
 
+	loc := 16
 	loc += writeInt32(m.Flags, buf, loc)
 
 	loc += writeCString(m.Namespace, buf, loc)

@@ -1,6 +1,9 @@
 package mongowire
 
-import "github.com/pkg/errors"
+import (
+	"github.com/pkg/errors"
+	"github.com/y0ssar1an/q"
+)
 
 type MessageHeader struct {
 	Size       int32 // total message size
@@ -10,10 +13,10 @@ type MessageHeader struct {
 }
 
 func (h *MessageHeader) WriteInto(buf []byte) {
-	writeInt32(h.Size, buf, 0)
-	writeInt32(h.RequestID, buf, 4)
-	writeInt32(h.ResponseTo, buf, 8)
-	writeInt32(int32(h.OpCode), buf, 12)
+	_ = writeInt32(h.Size, buf, 0)
+	_ = writeInt32(h.RequestID, buf, 4)
+	_ = writeInt32(h.ResponseTo, buf, 8)
+	_ = writeInt32(int32(h.OpCode), buf, 12)
 }
 
 func (h *MessageHeader) Parse(body []byte) (Message, error) {
@@ -22,6 +25,7 @@ func (h *MessageHeader) Parse(body []byte) (Message, error) {
 		err error
 	)
 
+	q.Q("parsing type", h.OpCode)
 	switch h.OpCode {
 	case OP_REPLY:
 		m, err = h.parseReplyMessage(body)
