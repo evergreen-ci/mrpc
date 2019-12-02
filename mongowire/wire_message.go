@@ -9,6 +9,7 @@ import (
 type OpMessageSection interface {
 	Type() uint8
 	Name() string
+	DB() string
 	Documents() []birch.Document
 	Serialize() []byte
 }
@@ -23,9 +24,25 @@ type opMessagePayloadType0 struct {
 }
 
 func (p *opMessagePayloadType0) Type() uint8 { return OpMessageSectionBody }
+
 func (p *opMessagePayloadType0) Name() string {
 	return p.Document.ElementAt(0).Key()
 }
+
+func (p *opMessagePayloadType0) DB() string {
+	key, err := p.Document.LookupErr("$db")
+	if err != nil {
+		return ""
+	}
+
+	val, ok := key.StringValueOK()
+	if !ok {
+		return ""
+	}
+
+	return val
+}
+
 func (p *opMessagePayloadType0) Documents() []birch.Document {
 	return []birch.Document{*p.Document.Copy()}
 }
@@ -43,8 +60,12 @@ type opMessagePayloadType1 struct {
 	Payload    []birch.Document
 }
 
-func (p *opMessagePayloadType1) Type() uint8                 { return OpMessageSectionDocumentSequence }
-func (p *opMessagePayloadType1) Name() string                { return p.Identifier }
+func (p *opMessagePayloadType1) Type() uint8 { return OpMessageSectionDocumentSequence }
+
+func (p *opMessagePayloadType1) Name() string { return p.Identifier }
+
+func (p *opMessagePayloadType1) DB() string { return "" }
+
 func (p *opMessagePayloadType1) Documents() []birch.Document { return p.Payload }
 
 func (p *opMessagePayloadType1) Serialize() []byte {
@@ -70,8 +91,20 @@ func (p *opMessagePayloadType1) Serialize() []byte {
 func (m *opMessage) Header() MessageHeader { return m.header }
 func (m *opMessage) HasResponse() bool     { return m.Flags > 1 }
 func (m *opMessage) Scope() *OpScope {
+	var cmd string
+	var db string
+	// OP_MSG is expected to have exactly one body section.
+	for _, section := range m.Items {
+		if _, ok := section.(*opMessagePayloadType0); ok {
+			cmd = section.Name()
+			db = section.DB()
+			break
+		}
+	}
 	return &OpScope{
-		Type: m.header.OpCode,
+		Type:    m.header.OpCode,
+		Context: db,
+		Command: cmd,
 	}
 }
 
@@ -122,7 +155,6 @@ func NewOpMessage(moreToCome bool, documents []birch.Document, items ...model.Se
 
 	for idx := range documents {
 		msg.Items[idx] = &opMessagePayloadType0{
-			// PayloadType: 0,
 			Document: documents[idx].Copy(),
 		}
 	}
@@ -134,7 +166,6 @@ func NewOpMessage(moreToCome bool, documents []birch.Document, items ...model.Se
 	for idx := range items {
 		item := items[idx]
 		it := &opMessagePayloadType1{
-			// PayloadType: 1,
 			Identifier: item.Identifier,
 		}
 		for _, i := range item.Documents {
