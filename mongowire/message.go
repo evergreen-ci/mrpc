@@ -113,7 +113,7 @@ type CommandReplyMessage struct {
 }
 
 // OP_MSG
-type opMessage struct {
+type OpMessage struct {
 	header MessageHeader
 
 	Flags      uint32

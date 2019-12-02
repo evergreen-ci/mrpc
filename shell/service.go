@@ -62,47 +62,49 @@ func (s *shellService) registerHandlers() error {
 		listCollectionsCommand:         s.listCollections,
 		getCmdLineOptsCommand:          s.getCmdLineOpts,
 	} {
-		if err := s.RegisterOperation(&mongowire.OpScope{
-			Type:    mongowire.OP_COMMAND,
-			Command: name,
-		}, handler); err != nil {
-			return errors.Wrapf(err, "could not register handler for %s", name)
+		for _, opType := range []mongowire.OpType{mongowire.OP_COMMAND, mongowire.OP_MSG} {
+			if err := s.RegisterOperation(&mongowire.OpScope{
+				Type:    opType,
+				Command: name,
+			}, handler); err != nil {
+				return errors.Wrapf(err, "could not register %s handler for %s", opType.String(), name)
+			}
 		}
 	}
 
 	return nil
 }
 
+const opMsgWireVersion = 6
+
 func (s *shellService) isMaster(ctx context.Context, w io.Writer, msg mongowire.Message) {
-	WriteOKResponse(ctx, w, isMasterCommand)
+	resp, err := ResponseToMessage(makeIsMasterResponse(0, opMsgWireVersion))
+	if err != nil {
+		WriteErrorResponse(ctx, w, msg.Header().OpCode, errors.Wrap(err, "could not make response"), isMasterCommand)
+		return
+	}
+	WriteResponse(ctx, w, msg.Header().OpCode, resp, isMasterCommand)
 }
 
 func (s *shellService) whatsMyURI(ctx context.Context, w io.Writer, msg mongowire.Message) {
 	resp, err := ResponseToMessage(makeWhatsMyURIResponse(s.Address()))
 	if err != nil {
-		WriteErrorResponse(ctx, w, errors.Wrap(err, "could not make response"), whatsMyURICommand)
+		WriteErrorResponse(ctx, w, msg.Header().OpCode, errors.Wrap(err, "could not make response"), whatsMyURICommand)
 		return
 	}
-	WriteResponse(ctx, w, resp, whatsMyURICommand)
+	WriteResponse(ctx, w, msg.Scope(), resp, whatsMyURICommand)
 }
 
 func (s *shellService) buildInfo(ctx context.Context, w io.Writer, msg mongowire.Message) {
-	// kim: TODO: respond with current shell version? Not sure what the correct
-	// version to send back here is.
-	resp, err := ResponseToMessage(makeBuildInfoResponse("0.0.0"))
-	if err != nil {
-		WriteErrorResponse(ctx, w, errors.Wrap(err, "could not make response"), buildInfoCommand)
-		return
-	}
-	WriteResponse(ctx, w, resp, buildInfoCommand)
+	WriteResponse(ctx, w, msg.Header().OpCode, resp, buildInfoCommand)
 }
 
 func (s *shellService) getCmdLineOpts(ctx context.Context, w io.Writer, msg mongowire.Message) {
-	WriteNotOKResponse(ctx, w, getCmdLineOptsCommand)
+	WriteNotOKResponse(ctx, w, msg.Header().OpCode, getCmdLineOptsCommand)
 }
 
 func (s *shellService) getFreeMonitoringStatus(ctx context.Context, w io.Writer, msg mongowire.Message) {
-	WriteNotOKResponse(ctx, w, getFreeMonitoringStatusCommand)
+	WriteNotOKResponse(ctx, w, msg.Header().OpCode, getFreeMonitoringStatusCommand)
 }
 
 func (s *shellService) getLog(ctx context.Context, w io.Writer, msg mongowire.Message) {
@@ -110,13 +112,13 @@ func (s *shellService) getLog(ctx context.Context, w io.Writer, msg mongowire.Me
 	if err != nil {
 		return
 	}
-	WriteResponse(ctx, w, resp, getLogCommand)
+	WriteResponse(ctx, w, msg.Header().OpCode, resp, getLogCommand)
 }
 
 func (s *shellService) listCollections(ctx context.Context, w io.Writer, msg mongowire.Message) {
-	WriteNotOKResponse(ctx, w, listCollectionsCommand)
+	WriteNotOKResponse(ctx, w, msg.Header().OpCode, listCollectionsCommand)
 }
 
 func (s *shellService) replSetGetStatus(ctx context.Context, w io.Writer, msg mongowire.Message) {
-	WriteNotOKResponse(ctx, w, replSetGetStatusCommand)
+	WriteNotOKResponse(ctx, w, msg.Header().OpCode, replSetGetStatusCommand)
 }
