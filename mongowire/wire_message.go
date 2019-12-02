@@ -25,14 +25,12 @@ type opMessagePayloadType0 struct {
 
 func (p *opMessagePayloadType0) Type() uint8 { return OpMessageSectionBody }
 func (p *opMessagePayloadType0) Name() string {
-	// kim: TODO: this is copied from OP_QUERY upconverted to OP_COMMAND.
 	return p.Document.ElementAt(0).Key()
 }
 func (p *opMessagePayloadType0) Documents() []birch.Document {
 	return []birch.Document{*p.Document.Copy()}
 }
 func (p *opMessagePayloadType0) DB() string {
-	// kim: QUESTION: where does this magic key come from?
 	key, err := p.Document.LookupErr("$db")
 	if err != nil {
 		return ""
@@ -175,7 +173,6 @@ func (h *MessageHeader) parseMsgBody(body []byte) (Message, error) {
 			if err != nil {
 				return nil, errors.Wrap(err, "could not read identifier")
 			}
-			// TODO: get DB/Collection from section.Identifier
 			loc += len(section.Identifier)
 
 			for remaining := int(section.Size) - 4 - len(section.Identifier); remaining > 0; {
