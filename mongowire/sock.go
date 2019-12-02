@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
-	"github.com/y0ssar1an/q"
 )
 
 const MaxInt32 = 2147483647
@@ -86,8 +85,6 @@ func ReadMessage(ctx context.Context, reader io.Reader) (Message, error) {
 	header.RequestID = readInt32(restBuf)
 	header.ResponseTo = readInt32(restBuf[4:])
 	header.OpCode = OpType(readInt32(restBuf[8:]))
-
-	q.Q(header.RequestID, header.ResponseTo, header.OpCode)
 
 	return header.Parse(restBuf[12:])
 }

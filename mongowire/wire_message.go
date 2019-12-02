@@ -9,7 +9,6 @@ import (
 type OpMessageSection interface {
 	Type() uint8
 	Name() string
-	DB() string
 	Documents() []birch.Document
 	Serialize() []byte
 }
@@ -30,19 +29,6 @@ func (p *opMessagePayloadType0) Name() string {
 func (p *opMessagePayloadType0) Documents() []birch.Document {
 	return []birch.Document{*p.Document.Copy()}
 }
-func (p *opMessagePayloadType0) DB() string {
-	key, err := p.Document.LookupErr("$db")
-	if err != nil {
-		return ""
-	}
-
-	val, ok := key.StringValueOK()
-	if !ok {
-		return ""
-	}
-
-	return val
-}
 
 func (p *opMessagePayloadType0) Serialize() []byte {
 	buf := make([]byte, 1+getDocSize(p.Document))
@@ -59,11 +45,18 @@ type opMessagePayloadType1 struct {
 
 func (p *opMessagePayloadType1) Type() uint8                 { return OpMessageSectionDocumentSequence }
 func (p *opMessagePayloadType1) Name() string                { return p.Identifier }
-func (p *opMessagePayloadType1) DB() string                  { return NamespaceToDB(p.Identifier) }
 func (p *opMessagePayloadType1) Documents() []birch.Document { return p.Payload }
 
 func (p *opMessagePayloadType1) Serialize() []byte {
-	buf := make([]byte, p.Size)
+	size := 1                     // kind
+	size += 4                     // size
+	size += len(p.Identifier) + 1 // identifier
+	for _, doc := range p.Payload {
+		size += getDocSize(&doc)
+	}
+	p.Size = int32(size)
+
+	buf := make([]byte, size)
 	buf[0] = p.Type() // kind
 	loc := 1
 	loc += writeInt32(p.Size, buf, loc)
@@ -83,10 +76,26 @@ func (m *opMessage) Scope() *OpScope {
 }
 
 func (m *opMessage) Serialize() []byte {
-	buf := make([]byte, m.header.Size)
+	size := 16 // header
+	size += 4  // flags
+	for _, section := range m.Items {
+		switch p := section.(type) {
+		case *opMessagePayloadType0:
+			size += 1 // kind
+			size += getDocSize(p.Document)
+		case *opMessagePayloadType1:
+			size += 1 // kind
+			size += int(p.Size)
+		}
+	}
+	if m.Checksum != 0 && (m.Flags&1) == 1 {
+		size += 4
+	}
+	m.header.Size = int32(size)
+	buf := make([]byte, size)
 	m.header.WriteInto(buf)
 
-	loc := 16 /* header */
+	loc := 16 // header
 	loc += writeInt32(int32(m.Flags), buf, loc)
 
 	for _, section := range m.Items {
@@ -159,10 +168,8 @@ func (h *MessageHeader) parseMsgBody(body []byte) (Message, error) {
 		switch kind {
 		case OpMessageSectionBody:
 			section := &opMessagePayloadType0{}
-			// Payload is standard command request and reply body.
 			docSize := int(readInt32(body[loc:]))
 			section.Document, err = birch.ReadDocument(body[loc : loc+docSize])
-			// TODO: get DB/Collection from section.Document, which is an OP_COMMAND
 			loc += getDocSize(section.Document)
 			msg.Items = append(msg.Items, section)
 		case OpMessageSectionDocumentSequence:

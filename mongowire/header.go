@@ -2,7 +2,6 @@ package mongowire
 
 import (
 	"github.com/pkg/errors"
-	"github.com/y0ssar1an/q"
 )
 
 type MessageHeader struct {
@@ -25,7 +24,6 @@ func (h *MessageHeader) Parse(body []byte) (Message, error) {
 		err error
 	)
 
-	q.Q("parsing type", h.OpCode)
 	switch h.OpCode {
 	case OP_REPLY:
 		m, err = h.parseReplyMessage(body)
