@@ -103,9 +103,8 @@ func ResponseToMessage(t mongowire.OpType, resp interface{}) (mongowire.Message,
 	if err != nil {
 		return nil, errors.Wrap(err, "could not convert BSON response to document")
 	}
-	if scope.Type == mongowire.OP_MSG {
-		// TODO:[]birch.Document, not []*birch.Document
-		// return mongowire.NewOpMessage(false, []birch.Document{*doc})
+	if t == mongowire.OP_MSG {
+		return mongowire.NewOpMessage(false, []birch.Document{*doc}), nil
 	}
 	return mongowire.NewReply(0, 0, 0, 1, []birch.Document{*doc}), nil
 }
@@ -121,7 +120,7 @@ func RequestToMessage(t mongowire.OpType, req interface{}) (mongowire.Message, e
 		return nil, errors.Wrap(err, "could not convert BSON response to document")
 	}
 	if t == mongowire.OP_MSG {
-		// return mongowire.NewOpMessage(false, []birch.Document{*doc})
+		return mongowire.NewOpMessage(false, []birch.Document{*doc}), nil
 	}
 
 	// <namespace.$cmd  format is required to indicate that the OP_QUERY should
@@ -132,17 +131,15 @@ func RequestToMessage(t mongowire.OpType, req interface{}) (mongowire.Message, e
 
 // requestMessageToDocument converts a wire protocol request message into a
 // document.
-// TODO: support OP_MSG
 func requestMessageToDocument(msg mongowire.Message) (*birch.Document, error) {
 	opMsg, ok := msg.(*mongowire.OpMessage)
 	if ok {
 		for _, section := range opMsg.Items {
-			// kim: TODO: make this work once MAKE-1032 (OP_MSG) PR is merged.
-			// if section.Type() == OpMessagePayloadTypeBody {
-			//     return section.Documents()[0]
-			// }
+			if section.Type() == mongowire.OpMessageSectionBody && len(section.Documents()) != 0 {
+				return section.Documents()[0].Copy(), nil
+			}
 		}
-		return nil, errors.Errorf("%s message did not contain body", msg.Header().OpCode
+		return nil, errors.Errorf("%s message did not contain body", msg.Header().OpCode)
 	}
 	opCmdMsg, ok := msg.(*mongowire.CommandMessage)
 	if !ok {
@@ -162,12 +159,11 @@ func responseMessageToDocument(msg mongowire.Message) (*birch.Document, error) {
 	}
 	if opMsg, ok := msg.(*mongowire.OpMessage); ok {
 		for _, section := range opMsg.Items {
-			// kim: TODO: make this work once MAKE-1032 (OP_MSG) PR is merged.
-			// if section.Type() == OpMessagePayloadTypeBody {
-			//     return section.Documents()[0]
-			// }
+			if section.Type() == mongowire.OpMessageSectionBody && len(section.Documents()) != 0 {
+				return section.Documents()[0].Copy(), nil
+			}
 		}
-		return nil, errors.Errorf("%s response did not contain body", mongowire.OP_MSG.String(),
+		return nil, errors.Errorf("%s response did not contain body", mongowire.OP_MSG.String())
 	}
 	return nil, errors.Errorf("message is not of type %s, %s, nor %s", mongowire.OP_COMMAND_REPLY.String(), mongowire.OP_REPLY.String(), mongowire.OP_MSG.String())
 }

@@ -78,25 +78,32 @@ func (s *shellService) registerHandlers() error {
 const opMsgWireVersion = 6
 
 func (s *shellService) isMaster(ctx context.Context, w io.Writer, msg mongowire.Message) {
-	resp, err := ResponseToMessage(makeIsMasterResponse(0, opMsgWireVersion))
+	t := msg.Header().OpCode
+	resp, err := ResponseToMessage(t, makeIsMasterResponse(0, opMsgWireVersion))
 	if err != nil {
-		WriteErrorResponse(ctx, w, msg.Header().OpCode, errors.Wrap(err, "could not make response"), isMasterCommand)
+		WriteErrorResponse(ctx, w, t, errors.Wrap(err, "could not make response"), isMasterCommand)
 		return
 	}
-	WriteResponse(ctx, w, msg.Header().OpCode, resp, isMasterCommand)
+	WriteResponse(ctx, w, resp, isMasterCommand)
 }
 
 func (s *shellService) whatsMyURI(ctx context.Context, w io.Writer, msg mongowire.Message) {
-	resp, err := ResponseToMessage(makeWhatsMyURIResponse(s.Address()))
+	t := msg.Header().OpCode
+	resp, err := ResponseToMessage(t, makeWhatsMyURIResponse(s.Address()))
 	if err != nil {
-		WriteErrorResponse(ctx, w, msg.Header().OpCode, errors.Wrap(err, "could not make response"), whatsMyURICommand)
+		WriteErrorResponse(ctx, w, t, errors.Wrap(err, "could not make response"), whatsMyURICommand)
 		return
 	}
-	WriteResponse(ctx, w, msg.Scope(), resp, whatsMyURICommand)
+	WriteResponse(ctx, w, resp, whatsMyURICommand)
 }
 
 func (s *shellService) buildInfo(ctx context.Context, w io.Writer, msg mongowire.Message) {
-	WriteResponse(ctx, w, msg.Header().OpCode, resp, buildInfoCommand)
+	resp, err := ResponseToMessage(msg.Header().OpCode, makeBuildInfoResponse("0.0.0"))
+	if err != nil {
+		WriteErrorResponse(ctx, w, msg.Header().OpCode, errors.Wrap(err, "could not make response"), buildInfoCommand)
+		return
+	}
+	WriteResponse(ctx, w, resp, buildInfoCommand)
 }
 
 func (s *shellService) getCmdLineOpts(ctx context.Context, w io.Writer, msg mongowire.Message) {
@@ -108,11 +115,11 @@ func (s *shellService) getFreeMonitoringStatus(ctx context.Context, w io.Writer,
 }
 
 func (s *shellService) getLog(ctx context.Context, w io.Writer, msg mongowire.Message) {
-	resp, err := ResponseToMessage(makeGetLogResponse([]string{}))
+	resp, err := ResponseToMessage(msg.Header().OpCode, makeGetLogResponse([]string{}))
 	if err != nil {
 		return
 	}
-	WriteResponse(ctx, w, msg.Header().OpCode, resp, getLogCommand)
+	WriteResponse(ctx, w, resp, getLogCommand)
 }
 
 func (s *shellService) listCollections(ctx context.Context, w io.Writer, msg mongowire.Message) {

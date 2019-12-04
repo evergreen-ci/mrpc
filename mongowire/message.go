@@ -135,7 +135,7 @@ func GetModel(msg Message) (interface{}, OpType) {
 			Inputs:             m.InputDocs,
 			ConvertedFromQuery: m.upconverted,
 		}, OP_COMMAND
-	case *opMessage:
+	case *OpMessage:
 		op := &model.Message{
 			Database:   m.DB,
 			Collection: m.Collection,

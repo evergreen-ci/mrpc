@@ -8,7 +8,6 @@ import (
 	"net"
 
 	"github.com/evergreen-ci/mrpc/mongowire"
-	"github.com/k0kubun/pp"
 	"github.com/mongodb/grip"
 	"github.com/mongodb/grip/message"
 	"github.com/mongodb/grip/recovery"
@@ -101,9 +100,7 @@ func (s *basicService) dispatchRequest(ctx context.Context, conn net.Conn) {
 			return
 		}
 
-		pp.Println("kim: received message:", m)
 		scope := m.Scope()
-		pp.Println("kim: message scope:", *scope)
 
 		handler, ok := s.registry.Get(scope)
 		if !ok {
