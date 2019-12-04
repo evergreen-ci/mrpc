@@ -41,6 +41,7 @@ const (
 	// handlers for the different "buildinfo" commands
 	buildInfoCommand               = "buildInfo"
 	BuildinfoCommand               = "buildinfo"
+	endSessionsCommand             = "endSessions"
 	getCmdLineOptsCommand          = "getCmdLineOpts"
 	getLogCommand                  = "getLog"
 	getFreeMonitoringStatusCommand = "getFreeMonitoringStatus"
@@ -56,6 +57,7 @@ func (s *shellService) registerHandlers() error {
 		whatsMyURICommand:              s.whatsMyURI,
 		BuildinfoCommand:               s.buildInfo,
 		buildInfoCommand:               s.buildInfo,
+		endSessionsCommand:             s.endSessions,
 		getLogCommand:                  s.getLog,
 		replSetGetStatusCommand:        s.replSetGetStatus,
 		getFreeMonitoringStatusCommand: s.getFreeMonitoringStatus,
@@ -104,6 +106,10 @@ func (s *shellService) buildInfo(ctx context.Context, w io.Writer, msg mongowire
 		return
 	}
 	WriteResponse(ctx, w, resp, buildInfoCommand)
+}
+
+func (s *shellService) endSessions(ctx context.Context, w io.Writer, msg mongowire.Message) {
+	WriteNotOKResponse(ctx, w, msg.Header().OpCode, getCmdLineOptsCommand)
 }
 
 func (s *shellService) getCmdLineOpts(ctx context.Context, w io.Writer, msg mongowire.Message) {
