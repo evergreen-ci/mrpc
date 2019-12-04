@@ -50,7 +50,6 @@ const (
 )
 
 func (s *shellService) registerHandlers() error {
-	// TODO: support OP_MSG handlers
 	for name, handler := range map[string]mrpc.HandlerFunc{
 		// Required initialization commands
 		isMasterCommand:                s.isMaster,

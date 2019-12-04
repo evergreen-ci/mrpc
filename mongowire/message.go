@@ -152,7 +152,12 @@ func GetModel(msg Message) (interface{}, OpType) {
 			op.MoreToCome = true
 		}
 
-		// TODO parse sequence/payload
+		for _, section := range m.Items {
+			op.Items = append(op.Items, model.SequenceItem{
+				Identifier: section.Name(),
+				Documents:  section.Documents(),
+			})
+		}
 
 		return op, OP_MSG
 	case *deleteMessage:
