@@ -1,6 +1,8 @@
 package mongowire
 
-import "github.com/pkg/errors"
+import (
+	"github.com/pkg/errors"
+)
 
 func NewGetMore(ns string, number int32, cursorID int64) Message {
 	return &getMoreMessage{
@@ -36,7 +38,7 @@ func (m *getMoreMessage) Serialize() []byte {
 	loc := 16
 	loc += writeInt32(0, buf, loc)
 
-	loc += writeCString(m.Namespace, buf, loc)
+	loc = writeCString(m.Namespace, buf, loc)
 	loc += writeInt32(m.NReturn, buf, loc)
 
 	loc += writeInt64(m.CursorId, buf, loc)
