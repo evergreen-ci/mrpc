@@ -41,21 +41,18 @@ func ReadMessage(ctx context.Context, reader io.Reader) (Message, error) {
 	}
 
 	header := MessageHeader{}
-
 	header.Size = readInt32(sizeBuf)
-
 	if header.Size > int32(200*1024*1024) {
 		if header.Size == 542393671 {
 			return nil, errors.Errorf("message too big, probably http request %d", header.Size)
 		}
 		return nil, errors.Errorf("message too big %d", header.Size)
 	}
-
 	if header.Size < 0 || header.Size-4 > MaxInt32 {
 		return nil, errors.New("message header has invalid size")
 	}
-	restBuf := bytes.NewBuffer([]byte{})
 
+	restBuf := bytes.NewBuffer([]byte{})
 	for read := 0; int32(read) < header.Size-4; {
 		readFinished = make(chan readResult)
 		tempBuf := make([]byte, header.Size-4)
@@ -71,6 +68,10 @@ func ReadMessage(ctx context.Context, reader io.Reader) (Message, error) {
 		case <-ctx.Done():
 			return nil, errors.WithStack(ctx.Err())
 		case res := <-readFinished:
+			if res.err == io.EOF {
+				read = int(header.Size - 4)
+				break
+			}
 			if res.err != nil {
 				return nil, errors.WithStack(res.err)
 			}
