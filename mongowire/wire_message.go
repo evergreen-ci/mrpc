@@ -216,7 +216,7 @@ func (h *MessageHeader) parseMsgBody(body []byte) (Message, error) {
 			if err != nil {
 				return nil, errors.Wrap(err, "could not read identifier")
 			}
-			loc += len(section.Identifier) + 1
+			loc += len(section.Identifier) + 1 // c string null terminator
 
 			for remaining := int(section.Size) - 1 - 4 - len(section.Identifier) - 1; remaining > 0; {
 				docSize := int(readInt32(body[loc:]))
