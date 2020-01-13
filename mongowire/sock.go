@@ -52,7 +52,7 @@ func ReadMessage(ctx context.Context, reader io.Reader) (Message, error) {
 		return nil, errors.New("message header has invalid size")
 	}
 
-	restBuf := bytes.NewBuffer([]byte{})
+	restBuf := &bytes.Buffer{}
 	for read := 0; int32(read) < header.Size-4; {
 		readFinished = make(chan readResult)
 		tempBuf := make([]byte, header.Size-4)
