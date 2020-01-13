@@ -38,7 +38,7 @@ func (m *getMoreMessage) Serialize() []byte {
 	loc := 16
 	loc += writeInt32(0, buf, loc)
 
-	loc = writeCString(m.Namespace, buf, loc)
+	loc += writeCString(m.Namespace, buf, loc)
 	loc += writeInt32(m.NReturn, buf, loc)
 
 	loc += writeInt64(m.CursorId, buf, loc)

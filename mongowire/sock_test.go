@@ -91,6 +91,37 @@ func TestReadMessage(t *testing.T) {
 	}
 }
 
+func TestSendMessage(t *testing.T) {
+	t.Run("CanceledContext", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		w := &mockWriter{}
+		assert.Error(t, SendMessage(ctx, createSmallMessage(t), w))
+		assert.Empty(t, w.data)
+	})
+	t.Run("SmallMessage", func(t *testing.T) {
+		w := &mockWriter{}
+		smallMessage := createSmallMessage(t)
+		require.NoError(t, SendMessage(context.TODO(), smallMessage, w))
+		assert.Equal(t, w.data, smallMessage.Serialize())
+	})
+	t.Run("LargeMessage", func(t *testing.T) {
+		w := &mockWriter{}
+		largeMessage := createLargeMessage(t, 3*1024*1024)
+		require.NoError(t, SendMessage(context.TODO(), largeMessage, w))
+		assert.Equal(t, w.data, largeMessage.Serialize())
+	})
+}
+
+type mockWriter struct {
+	data []byte
+}
+
+func (w *mockWriter) Write(p []byte) (int, error) {
+	w.data = append(w.data, p...)
+	return len(p), nil
+}
+
 func createSmallMessage(t *testing.T) Message {
 	data, err := bson.Marshal(bson.M{"foo": "bar"})
 	require.NoError(t, err)

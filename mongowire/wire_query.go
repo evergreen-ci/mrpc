@@ -38,7 +38,7 @@ func (m *queryMessage) Serialize() []byte {
 	loc := 16
 	loc += writeInt32(m.Flags, buf, loc)
 
-	loc = writeCString(m.Namespace, buf, loc)
+	loc += writeCString(m.Namespace, buf, loc)
 	loc += writeInt32(m.Skip, buf, loc)
 
 	loc += writeInt32(m.NReturn, buf, loc)

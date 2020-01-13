@@ -37,11 +37,16 @@ func TestMessage(t *testing.T) {
 			bodySize: 20 + getDocSize(query) + getDocSize(project),
 		},
 		{
-			name:     OP_MSG.String(),
-			message:  NewOpMessage(false, []birch.Document{*query}, model.SequenceItem{Identifier: "foo", Documents: []birch.Document{*project}}),
+			name: OP_MSG.String(),
+			message: NewOpMessage(
+				false,
+				[]birch.Document{*query},
+				model.SequenceItem{Identifier: "foo", Documents: []birch.Document{*project, *query}},
+				model.SequenceItem{Identifier: "bar", Documents: []birch.Document{*query}},
+			),
 			header:   MessageHeader{RequestID: 19, OpCode: OP_MSG},
 			scope:    &OpScope{Type: OP_MSG, Command: "foo"},
-			bodySize: 4 + getDocSize(query) + 1 + getDocSize(project) + 1,
+			bodySize: 4 + (1 + getDocSize(query)) + (1 + 4 + 3 + 1 + getDocSize(project) + getDocSize(query)) + (1 + 4 + 3 + 1 + getDocSize(query)),
 		},
 		{
 			name:     OP_UPDATE.String(),
@@ -109,7 +114,7 @@ func TestMessage(t *testing.T) {
 			assert.Equal(t, headerSize+test.bodySize, len(test.message.Serialize()))
 			assert.Equal(t, int32(headerSize+test.bodySize), test.message.Header().Size)
 			m, err := test.header.Parse(test.message.Serialize()[headerSize:])
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, test.message.Serialize(), m.Serialize())
 			assert.Equal(t, test.message.Header(), m.Header())
 		})
