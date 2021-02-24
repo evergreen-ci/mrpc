@@ -99,9 +99,6 @@ $(buildDir)/output.%.lint: $(buildDir)/run-linter .FORCE
 # end test and coverage artifacts
 
 # user-facing targets for basic build and development operations
-proto:
-	@mkdir -p remote/internal
-	protoc --go_out=plugins=grpc:remote/internal *.proto
 lint:$(lintOutput)
 test:$(testOutput)
 coverage: $(coverageOutput)
@@ -114,7 +111,7 @@ phony += compile lint test coverage coverage-html
 .FORCE:
 
 clean:
-	rm -rf $(lintDeps) $(buildDir)/run-linter
+	rm -rf $(lintDeps)
 
 clean-results:
 	rm -rf $(buildDir)/output.*
