@@ -20,7 +20,9 @@ func NewUpdate(ns string, flags int32, filter, update *birch.Document) Message {
 
 func (m *updateMessage) HasResponse() bool     { return false }
 func (m *updateMessage) Header() MessageHeader { return m.header }
-func (m *updateMessage) Scope() *OpScope       { return &OpScope{Type: m.header.OpCode, Context: m.Namespace} }
+func (m *updateMessage) Scope() *OpScope {
+	return &OpScope{Type: m.header.OpCode, Context: m.Namespace}
+}
 
 func (m *updateMessage) Serialize() []byte {
 	size := 16 /* header */ + 8 /* update header */
@@ -41,7 +43,7 @@ func (m *updateMessage) Serialize() []byte {
 	loc += writeInt32(m.Flags, buf, loc)
 
 	loc += writeDocAt(m.Filter, buf, loc)
-	loc += writeDocAt(m.Update, buf, loc)
+	loc += writeDocAt(m.Update, buf, loc) //nolint:ineffassign
 
 	return buf
 }

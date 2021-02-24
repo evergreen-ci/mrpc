@@ -3,8 +3,8 @@ package mrpc
 import (
 	"sync"
 
-	"github.com/pkg/errors"
 	"github.com/evergreen-ci/mrpc/mongowire"
+	"github.com/pkg/errors"
 )
 
 type OperationRegistry struct {

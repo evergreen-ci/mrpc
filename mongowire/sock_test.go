@@ -137,6 +137,7 @@ func createSmallMessage(t *testing.T) Message {
 
 func createLargeMessage(t *testing.T, size int) Message {
 	data, err := bson.Marshal(bson.M{"foo": bytes.Repeat([]byte{'a'}, size)})
+	require.NoError(t, err)
 	doc, err := birch.ReadDocument(data)
 	require.NoError(t, err)
 

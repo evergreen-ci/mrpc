@@ -44,7 +44,7 @@ func (m *queryMessage) Serialize() []byte {
 	loc += writeInt32(m.NReturn, buf, loc)
 
 	loc += writeDocAt(m.Query, buf, loc)
-	loc += writeDocAt(m.Project, buf, loc)
+	loc += writeDocAt(m.Project, buf, loc) //nolint:ineffassign
 
 	return buf
 }
