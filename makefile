@@ -45,7 +45,6 @@ coverageHtmlOutput := $(foreach target,$(testPackages),$(buildDir)/output.$(targ
 # end output files
 
 # start lint setup targets
-lintDeps := $(buildDir)/run-linter $(buildDir)/golangci-lint
 $(buildDir)/golangci-lint:
 	@curl --retry 10 --retry-max-time 60 -sSfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(buildDir) v1.40.0 >/dev/null 2>&1
 $(buildDir)/run-linter: cmd/run-linter/run-linter.go $(buildDir)/golangci-lint
@@ -92,11 +91,11 @@ testArgs += -short
 endif
 $(buildDir)/output.%.test: .FORCE
 	$(gobin) test $(testArgs) ./$(if $(subst $(name),,$*),$(subst -,/,$*),) | tee $@
-	@!( grep -s -q "^FAIL" $@ && grep -s -q "^WARNING: DATA RACE" $@)
-	@(grep -s -q "^PASS" $@ || grep -s -q "no test files" $@)
+	@grep -s -q "^PASS" $@
 $(buildDir)/output.%.coverage: .FORCE
 	$(gobin) test $(testArgs) ./$(if $(subst $(name),,$*),$(subst -,/,$*),) -covermode=count -coverprofile $@ | tee $(buildDir)/output.$*.test
 	@-[ -f $@ ] && $(gobin) tool cover -func=$@ | sed 's%$(projectPath)/%%' | column -t
+	@grep -s -q -e "^PASS" $(subst coverage,test,$@)
 $(buildDir)/output.%.coverage.html: $(buildDir)/output.%.coverage .FORCE
 	$(gobin) tool cover -html=$< -o $@
 
@@ -111,7 +110,7 @@ $(buildDir)/output.%.lint: $(buildDir)/run-linter .FORCE
 
 # start cleanup targets
 clean:
-	rm -rf $(lintDeps)
+	rm -rf $(buildDir)
 clean-results:
 	rm -rf $(buildDir)/output.*
 phony += clean clean-results
