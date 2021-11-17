@@ -62,8 +62,8 @@ $(shell mkdir -p $(buildDir))
 testOutput := $(foreach target,$(testPackages),$(buildDir)/output.$(target).test)
 lintOutput := $(foreach target,$(lintPackages),$(buildDir)/output.$(target).lint)
 coverageOutput := $(foreach target,$(testPackages),$(buildDir)/output.$(target).coverage)
-coverageHtmlOutput := $(foreach target,$(testPackages),$(buildDir)/output.$(target).coverage.html)
-.PRECIOUS: $(coverageOutput) $(coverageHtmlOutput) $(lintOutput) $(testOutput)
+htmlCoverageOutput := $(foreach target,$(testPackages),$(buildDir)/output.$(target).coverage.html)
+.PRECIOUS: $(coverageOutput) $(htmlCoverageOutput) $(lintOutput) $(testOutput)
 # end output files
 
 # start lint setup targets
@@ -79,8 +79,8 @@ compile: $(srcFiles)
 lint: $(lintOutput)
 test: $(testOutput)
 coverage: $(coverageOutput)
-coverage-html: $(coverageHtmlOutput)
-phony += compile lint test coverage coverage-html
+html-coverage: $(htmlCoverageOutput)
+phony += compile lint test coverage html-coverage
 # start convenience targets for running tests and coverage tasks on a
 # specific package.
 test-%: $(buildDir)/output.%.test
