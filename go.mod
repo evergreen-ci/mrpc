@@ -18,6 +18,6 @@ require (
 	github.com/shirou/gopsutil v3.21.9+incompatible // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/tklauser/go-sysconf v0.3.9 // indirect
-	go.mongodb.org/mongo-driver v1.8.2
+	go.mongodb.org/mongo-driver v1.8.3
 	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1 // indirect
 )
