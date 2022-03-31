@@ -45,7 +45,7 @@ func (s *basicService) RegisterOperation(scope *mongowire.OpScope, h HandlerFunc
 func (s *basicService) Run(ctx context.Context) error {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		return errors.Wrapf(err, "problem listening on %s", s.addr)
+		return errors.Wrapf(err, "listening on %s", s.addr)
 	}
 
 	go func() {
@@ -71,7 +71,7 @@ func (s *basicService) Run(ctx context.Context) error {
 
 		conn, err := l.Accept()
 		if err != nil {
-			grip.WarningWhen(ctx.Err() == nil, message.WrapError(err, "problem accepting connection"))
+			grip.WarningWhen(ctx.Err() == nil, message.WrapError(err, "accepting connection"))
 			continue
 		}
 
@@ -82,9 +82,9 @@ func (s *basicService) Run(ctx context.Context) error {
 func (s *basicService) dispatchRequest(ctx context.Context, conn net.Conn) {
 	defer func() {
 		err := recovery.HandlePanicWithError(recover(), nil, "connection handling")
-		grip.Error(message.WrapError(err, "error during request handling"))
+		grip.Error(message.WrapError(err, "request handling"))
 		if err := conn.Close(); err != nil {
-			grip.Error(message.WrapErrorf(err, "error closing connection from %s", conn.RemoteAddr()))
+			grip.Error(message.WrapErrorf(err, "closing connection from '%s'", conn.RemoteAddr()))
 			return
 		}
 		grip.Debugf("closed connection from %s", conn.RemoteAddr())
@@ -93,7 +93,7 @@ func (s *basicService) dispatchRequest(ctx context.Context, conn net.Conn) {
 	if c, ok := conn.(*tls.Conn); ok {
 		// we do this here so that we can get the SNI server name
 		if err := c.Handshake(); err != nil {
-			grip.Warning(message.WrapError(err, "error doing tls handshake"))
+			grip.Warning(message.WrapError(err, "performing TLS handshake"))
 			return
 		}
 		grip.Debugf("ssl connection to %s", c.ConnectionState().ServerName)
@@ -109,7 +109,7 @@ func (s *basicService) dispatchRequest(ctx context.Context, conn net.Conn) {
 			if ctx.Err() != nil {
 				return
 			}
-			grip.Error(message.WrapError(err, "problem reading message"))
+			grip.Error(message.WrapError(err, "reading message"))
 			return
 		}
 

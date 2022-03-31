@@ -58,7 +58,7 @@ func (h *MessageHeader) parseInsertMessage(buf []byte) (Message, error) {
 	loc := 0
 
 	if len(buf) < 4 {
-		return m, errors.New("invalid insert message -- message must have length of at least 4 bytes")
+		return m, errors.New("invalid insert message - message must have length of at least 4 bytes")
 	}
 
 	m.Flags = readInt32(buf[loc:])

@@ -59,7 +59,7 @@ func (h *MessageHeader) parseCommandReplyMessage(buf []byte) (Message, error) {
 
 	replySize := getDocSize(rm.CommandReply)
 	if len(buf) < replySize {
-		return nil, errors.New("invalid command message -- message length is too short")
+		return nil, errors.New("invalid command message - message length is too short")
 	}
 	buf = buf[replySize:]
 
@@ -69,7 +69,7 @@ func (h *MessageHeader) parseCommandReplyMessage(buf []byte) (Message, error) {
 	}
 	metaSize := getDocSize(rm.Metadata)
 	if len(buf) < metaSize {
-		return nil, errors.New("invalid command message -- message length is too short")
+		return nil, errors.New("invalid command message - message length is too short")
 	}
 	buf = buf[metaSize:]
 

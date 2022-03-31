@@ -55,7 +55,7 @@ func (h *MessageHeader) parseUpdateMessage(buf []byte) (Message, error) {
 	)
 
 	if len(buf) < 4 {
-		return nil, errors.New("invalid update message -- message must have length of at least 4 bytes")
+		return nil, errors.New("invalid update message - message must have length of at least 4 bytes")
 	}
 
 	m := &updateMessage{
@@ -72,7 +72,7 @@ func (h *MessageHeader) parseUpdateMessage(buf []byte) (Message, error) {
 	loc += len(m.Namespace) + 1
 
 	if len(buf) < (loc + 4) {
-		return nil, errors.New("invalid update message -- message length is too short")
+		return nil, errors.New("invalid update message - message length is too short")
 	}
 
 	m.Flags = readInt32(buf[loc:])
@@ -85,7 +85,7 @@ func (h *MessageHeader) parseUpdateMessage(buf []byte) (Message, error) {
 	loc += getDocSize(m.Filter)
 
 	if len(buf) < loc {
-		return m, errors.New("invalid update message -- message length is too short")
+		return m, errors.New("invalid update message - message length is too short")
 	}
 
 	m.Update, err = birch.ReadDocument(buf[loc:])

@@ -53,7 +53,7 @@ func (h *MessageHeader) parseGetMoreMessage(buf []byte) (Message, error) {
 	)
 
 	if len(buf) < 4 {
-		return nil, errors.New("invalid get more message -- message must have length of at least 4 bytes")
+		return nil, errors.New("invalid get more message - message must have length of at least 4 bytes")
 	}
 
 	qm := &getMoreMessage{

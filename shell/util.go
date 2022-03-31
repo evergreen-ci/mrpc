@@ -65,14 +65,14 @@ func WriteNotOKResponse(ctx context.Context, w io.Writer, t mongowire.OpType, op
 func MessageToRequest(msg mongowire.Message, out interface{}) error {
 	doc, err := requestMessageToDocument(msg)
 	if err != nil {
-		return errors.Wrap(err, "could not read response")
+		return errors.Wrap(err, "reading response")
 	}
 	b, err := doc.MarshalBSON()
 	if err != nil {
-		return errors.Wrap(err, "could not convert document to BSON")
+		return errors.Wrap(err, "converting document to BSON")
 	}
 	if err := bson.Unmarshal(b, out); err != nil {
-		return errors.Wrap(err, "could not convert BSON to response")
+		return errors.Wrap(err, "converting BSON to response")
 	}
 	return nil
 }
@@ -81,14 +81,14 @@ func MessageToRequest(msg mongowire.Message, out interface{}) error {
 func MessageToResponse(msg mongowire.Message, out interface{}) error {
 	doc, err := responseMessageToDocument(msg)
 	if err != nil {
-		return errors.Wrap(err, "could not read response")
+		return errors.Wrap(err, "reading response")
 	}
 	b, err := doc.MarshalBSON()
 	if err != nil {
-		return errors.Wrap(err, "could not convert document to BSON")
+		return errors.Wrap(err, "converting document to BSON")
 	}
 	if err := bson.Unmarshal(b, out); err != nil {
-		return errors.Wrap(err, "could not convert BSON to response")
+		return errors.Wrap(err, "converting BSON to response")
 	}
 	return nil
 }
@@ -97,11 +97,11 @@ func MessageToResponse(msg mongowire.Message, out interface{}) error {
 func ResponseToMessage(t mongowire.OpType, resp interface{}) (mongowire.Message, error) {
 	b, err := bson.Marshal(resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not convert response to BSON")
+		return nil, errors.Wrap(err, "converting response to BSON")
 	}
 	doc, err := birch.ReadDocument(b)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not convert BSON response to document")
+		return nil, errors.Wrap(err, "converting BSON response to document")
 	}
 	if t == mongowire.OP_MSG {
 		return mongowire.NewOpMessage(false, []birch.Document{*doc}), nil
@@ -113,11 +113,11 @@ func ResponseToMessage(t mongowire.OpType, resp interface{}) (mongowire.Message,
 func RequestToMessage(t mongowire.OpType, req interface{}) (mongowire.Message, error) {
 	b, err := bson.Marshal(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not convert response to BSON")
+		return nil, errors.Wrap(err, "converting response to BSON")
 	}
 	doc, err := birch.ReadDocument(b)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not convert BSON response to document")
+		return nil, errors.Wrap(err, "converting BSON response to document")
 	}
 	if t == mongowire.OP_MSG {
 		return mongowire.NewOpMessage(false, []birch.Document{*doc}), nil
@@ -143,7 +143,7 @@ func requestMessageToDocument(msg mongowire.Message) (*birch.Document, error) {
 	}
 	opCmdMsg, ok := msg.(*mongowire.CommandMessage)
 	if !ok {
-		return nil, errors.Errorf("message is not of type %s", mongowire.OP_COMMAND.String())
+		return nil, errors.Errorf("message is not of type '%s'", mongowire.OP_COMMAND.String())
 	}
 	return opCmdMsg.CommandArgs, nil
 }
@@ -165,5 +165,5 @@ func responseMessageToDocument(msg mongowire.Message) (*birch.Document, error) {
 		}
 		return nil, errors.Errorf("%s response did not contain body", mongowire.OP_MSG.String())
 	}
-	return nil, errors.Errorf("message is not of type %s, %s, nor %s", mongowire.OP_COMMAND_REPLY.String(), mongowire.OP_REPLY.String(), mongowire.OP_MSG.String())
+	return nil, errors.Errorf("message is not of type '%s', '%s', nor '%s'", mongowire.OP_COMMAND_REPLY.String(), mongowire.OP_REPLY.String(), mongowire.OP_MSG.String())
 }

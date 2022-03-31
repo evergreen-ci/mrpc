@@ -36,7 +36,7 @@ func ReadMessage(ctx context.Context, reader io.Reader) (Message, error) {
 			return nil, errors.WithStack(res.err)
 		}
 		if res.n != 4 {
-			return nil, errors.Errorf("didn't read message size from socket, got %d", res.n)
+			return nil, errors.Errorf("expected message size of 4, got %d", res.n)
 		}
 	}
 
@@ -85,7 +85,7 @@ func ReadMessage(ctx context.Context, reader io.Reader) (Message, error) {
 
 	buf := restBuf.Bytes()
 	if len(buf) < 12 {
-		return nil, errors.Errorf("invalid message header. either header.Size = %v is shorter than message length, or message is missing RequestId, ResponseTo, or OpCode fields.", header.Size)
+		return nil, errors.Errorf("invalid message header. either header.Size = %d is shorter than message length, or message is missing RequestId, ResponseTo, or OpCode fields.", header.Size)
 	}
 	header.RequestID = readInt32(buf)
 	header.ResponseTo = readInt32(buf[4:])
@@ -116,7 +116,7 @@ func SendMessage(ctx context.Context, m Message, writer io.Writer) error {
 			return errors.WithStack(ctx.Err())
 		case res := <-writeFinished:
 			if res.err != nil {
-				return errors.Wrap(res.err, "error writing message to client")
+				return errors.Wrap(res.err, "writing message to client")
 			}
 			if res.n == len(buf) {
 				return nil
