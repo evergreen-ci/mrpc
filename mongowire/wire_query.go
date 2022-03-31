@@ -44,7 +44,7 @@ func (m *queryMessage) Serialize() []byte {
 	loc += writeInt32(m.NReturn, buf, loc)
 
 	loc += writeDocAt(m.Query, buf, loc)
-	loc += writeDocAt(m.Project, buf, loc) //nolint:ineffassign
+	_ = writeDocAt(m.Project, buf, loc)
 
 	return buf
 }
@@ -109,7 +109,7 @@ func (h *MessageHeader) parseQueryMessage(buf []byte) (Message, error) {
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		loc += getDocSize(qm.Project) // nolint
+		_ = getDocSize(qm.Project)
 	}
 
 	if NamespaceIsCommand(qm.Namespace) {

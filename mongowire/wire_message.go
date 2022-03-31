@@ -141,7 +141,7 @@ func (m *OpMessage) Serialize() []byte {
 	loc += len(sections)
 
 	if m.Checksum != 0 && (m.Flags&1) == 1 {
-		loc += writeInt32(m.Checksum, buf, loc) //nolint:ineffassign
+		_ = writeInt32(m.Checksum, buf, loc)
 	}
 
 	m.serialized = buf

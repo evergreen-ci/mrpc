@@ -43,7 +43,7 @@ func (m *updateMessage) Serialize() []byte {
 	loc += writeInt32(m.Flags, buf, loc)
 
 	loc += writeDocAt(m.Filter, buf, loc)
-	loc += writeDocAt(m.Update, buf, loc) //nolint:ineffassign
+	_ = writeDocAt(m.Update, buf, loc)
 
 	return buf
 }
@@ -92,7 +92,7 @@ func (h *MessageHeader) parseUpdateMessage(buf []byte) (Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	loc += getDocSize(m.Update) // nolint
+	_ = getDocSize(m.Update)
 
 	return m, nil
 }

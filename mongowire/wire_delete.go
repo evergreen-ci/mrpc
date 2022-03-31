@@ -39,7 +39,7 @@ func (m *deleteMessage) Serialize() []byte {
 
 	loc += writeInt32(m.Flags, buf, loc)
 
-	loc += writeDocAt(m.Filter, buf, loc) //nolint:ineffassign
+	_ += writeDocAt(m.Filter, buf, loc)
 
 	return buf
 }
@@ -76,7 +76,7 @@ func (h *MessageHeader) parseDeleteMessage(buf []byte) (Message, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	loc += int(getDocSize(m.Filter))
+	_ = getDocSize(m.Filter)
 
 	return m, nil
 }
