@@ -39,7 +39,7 @@ func (m *deleteMessage) Serialize() []byte {
 
 	loc += writeInt32(m.Flags, buf, loc)
 
-	_ += writeDocAt(m.Filter, buf, loc)
+	_ = writeDocAt(m.Filter, buf, loc)
 
 	return buf
 }
