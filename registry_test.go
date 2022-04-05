@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/evergreen-ci/mrpc/mongowire"
-	"github.com/mongodb/grip"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -25,7 +24,6 @@ func (s *RegistrySuite) SetupSuite() {
 	var callCount int
 	s.handler = func(ctx context.Context, w io.Writer, m mongowire.Message) {
 		callCount++
-		grip.Infof("test handler, call %d", callCount)
 	}
 }
 

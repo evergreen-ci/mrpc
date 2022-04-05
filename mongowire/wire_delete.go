@@ -39,7 +39,7 @@ func (m *deleteMessage) Serialize() []byte {
 
 	loc += writeInt32(m.Flags, buf, loc)
 
-	loc += writeDocAt(m.Filter, buf, loc) //nolint:ineffassign
+	_ = writeDocAt(m.Filter, buf, loc)
 
 	return buf
 }
@@ -55,7 +55,7 @@ func (h *MessageHeader) parseDeleteMessage(buf []byte) (Message, error) {
 	}
 
 	if len(buf) < 4 {
-		return nil, errors.New("invalid delete message -- message must have length of at least 4 bytes")
+		return nil, errors.New("invalid delete message - message must have length of at least 4 bytes")
 	}
 	m.Reserved = readInt32(buf[loc:])
 	loc += 4
@@ -67,7 +67,7 @@ func (h *MessageHeader) parseDeleteMessage(buf []byte) (Message, error) {
 	loc += len(m.Namespace) + 1
 
 	if len(buf) < loc+4 {
-		return m, errors.New("invalid delete message -- message length is too short")
+		return m, errors.New("invalid delete message - message length is too short")
 	}
 	m.Flags = readInt32(buf[loc:])
 	loc += 4
@@ -76,7 +76,7 @@ func (h *MessageHeader) parseDeleteMessage(buf []byte) (Message, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	loc += int(getDocSize(m.Filter)) // nolint
+	_ = getDocSize(m.Filter)
 
 	return m, nil
 }

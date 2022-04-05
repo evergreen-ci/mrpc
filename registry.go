@@ -17,11 +17,11 @@ func (o *OperationRegistry) Add(op mongowire.OpScope, h HandlerFunc) error {
 	defer o.mu.Unlock()
 
 	if err := op.Validate(); err != nil {
-		return errors.Wrap(err, "could not add operation, it failed to validate")
+		return errors.Wrap(err, "invalid operation")
 	}
 
 	if h == nil {
-		return errors.Errorf("cannot define nil handler function for %+v", op)
+		return errors.Errorf("cannot define nil handler function for operation %+v", op)
 	}
 
 	if _, ok := o.ops[op]; ok {

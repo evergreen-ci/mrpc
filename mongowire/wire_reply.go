@@ -51,7 +51,7 @@ func (h *MessageHeader) parseReplyMessage(buf []byte) (Message, error) {
 	var loc int
 
 	if len(buf) < 20 {
-		return nil, errors.New("invalid reply message -- message must have length of at least 20 bytes")
+		return nil, errors.New("invalid reply message - message must have length of at least 20 bytes")
 	}
 
 	rm := &ReplyMessage{

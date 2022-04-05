@@ -68,7 +68,7 @@ func (s *shellService) registerHandlers() error {
 				Type:    opType,
 				Command: name,
 			}, handler); err != nil {
-				return errors.Wrapf(err, "could not register %s handler for %s", opType.String(), name)
+				return errors.Wrapf(err, "could not register handler '%s' for name '%s'", opType.String(), name)
 			}
 		}
 	}
@@ -82,7 +82,7 @@ func (s *shellService) isMaster(ctx context.Context, w io.Writer, msg mongowire.
 	t := msg.Header().OpCode
 	resp, err := ResponseToMessage(t, makeIsMasterResponse(0, opMsgWireVersion))
 	if err != nil {
-		WriteErrorResponse(ctx, w, t, errors.Wrap(err, "could not make response"), isMasterCommand)
+		WriteErrorResponse(ctx, w, t, errors.Wrap(err, "making response"), isMasterCommand)
 		return
 	}
 	WriteResponse(ctx, w, resp, isMasterCommand)
@@ -92,7 +92,7 @@ func (s *shellService) whatsMyURI(ctx context.Context, w io.Writer, msg mongowir
 	t := msg.Header().OpCode
 	resp, err := ResponseToMessage(t, makeWhatsMyURIResponse(s.Address()))
 	if err != nil {
-		WriteErrorResponse(ctx, w, t, errors.Wrap(err, "could not make response"), whatsMyURICommand)
+		WriteErrorResponse(ctx, w, t, errors.Wrap(err, "making response"), whatsMyURICommand)
 		return
 	}
 	WriteResponse(ctx, w, resp, whatsMyURICommand)
@@ -101,7 +101,7 @@ func (s *shellService) whatsMyURI(ctx context.Context, w io.Writer, msg mongowir
 func (s *shellService) buildInfo(ctx context.Context, w io.Writer, msg mongowire.Message) {
 	resp, err := ResponseToMessage(msg.Header().OpCode, makeBuildInfoResponse("0.0.0"))
 	if err != nil {
-		WriteErrorResponse(ctx, w, msg.Header().OpCode, errors.Wrap(err, "could not make response"), buildInfoCommand)
+		WriteErrorResponse(ctx, w, msg.Header().OpCode, errors.Wrap(err, "making response"), buildInfoCommand)
 		return
 	}
 	WriteResponse(ctx, w, resp, buildInfoCommand)

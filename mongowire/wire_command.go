@@ -74,7 +74,7 @@ func (h *MessageHeader) parseCommandMessage(buf []byte) (Message, error) {
 	}
 
 	if len(buf) < len(cmd.DB)+1 {
-		return nil, errors.New("invalid command message -- message length is too short")
+		return nil, errors.New("invalid command message - message length is too short")
 	}
 	buf = buf[len(cmd.DB)+1:]
 
@@ -83,7 +83,7 @@ func (h *MessageHeader) parseCommandMessage(buf []byte) (Message, error) {
 		return nil, err
 	}
 	if len(buf) < len(cmd.CmdName)+1 {
-		return nil, errors.New("invalid command message -- message length is too short")
+		return nil, errors.New("invalid command message - message length is too short")
 	}
 	buf = buf[len(cmd.CmdName)+1:]
 
@@ -98,7 +98,7 @@ func (h *MessageHeader) parseCommandMessage(buf []byte) (Message, error) {
 	}
 
 	if len(buf) < int(size) {
-		return cmd, errors.New("invalid command message -- message length is too short")
+		return cmd, errors.New("invalid command message - message length is too short")
 	}
 	buf = buf[size:]
 
@@ -113,7 +113,7 @@ func (h *MessageHeader) parseCommandMessage(buf []byte) (Message, error) {
 	}
 
 	if len(buf) < int(size) {
-		return cmd, errors.New("invalid command message -- message length is too short")
+		return cmd, errors.New("invalid command message - message length is too short")
 	}
 	buf = buf[size:]
 

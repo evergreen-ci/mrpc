@@ -41,7 +41,7 @@ func (m *getMoreMessage) Serialize() []byte {
 	loc += writeCString(m.Namespace, buf, loc)
 	loc += writeInt32(m.NReturn, buf, loc)
 
-	loc += writeInt64(m.CursorId, buf, loc) //nolint:ineffassign
+	_ = writeInt64(m.CursorId, buf, loc)
 
 	return buf
 }
@@ -53,7 +53,7 @@ func (h *MessageHeader) parseGetMoreMessage(buf []byte) (Message, error) {
 	)
 
 	if len(buf) < 4 {
-		return nil, errors.New("invalid get more message -- message must have length of at least 4 bytes")
+		return nil, errors.New("invalid get more message - message must have length of at least 4 bytes")
 	}
 
 	qm := &getMoreMessage{
@@ -70,13 +70,12 @@ func (h *MessageHeader) parseGetMoreMessage(buf []byte) (Message, error) {
 	loc += len(qm.Namespace) + 1
 
 	if len(buf) < loc+12 {
-		return nil, errors.New("invalid get more message -- message length is too short")
+		return nil, errors.New("invalid get more message - message length is too short")
 	}
 	qm.NReturn = readInt32(buf[loc:])
 	loc += 4
 
 	qm.CursorId = readInt64(buf[loc:])
-	loc += 8 // nolint
 
 	return qm, nil
 }

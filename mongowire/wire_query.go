@@ -44,7 +44,7 @@ func (m *queryMessage) Serialize() []byte {
 	loc += writeInt32(m.NReturn, buf, loc)
 
 	loc += writeDocAt(m.Query, buf, loc)
-	loc += writeDocAt(m.Project, buf, loc) //nolint:ineffassign
+	_ = writeDocAt(m.Project, buf, loc)
 
 	return buf
 }
@@ -68,7 +68,7 @@ func (m *queryMessage) convertToCommand() *CommandMessage {
 
 func (h *MessageHeader) parseQueryMessage(buf []byte) (Message, error) {
 	if len(buf) < 4 {
-		return nil, errors.New("invalid query message -- message must have length of at least 4 bytes")
+		return nil, errors.New("invalid query message - message must have length of at least 4 bytes")
 	}
 
 	var (
@@ -90,7 +90,7 @@ func (h *MessageHeader) parseQueryMessage(buf []byte) (Message, error) {
 	loc += len(qm.Namespace) + 1
 
 	if len(buf) < loc+8 {
-		return qm, errors.New("invalid query message -- message length is too short")
+		return qm, errors.New("invalid query message - message length is too short")
 	}
 	qm.Skip = readInt32(buf[loc:])
 	loc += 4
@@ -109,7 +109,7 @@ func (h *MessageHeader) parseQueryMessage(buf []byte) (Message, error) {
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		loc += getDocSize(qm.Project) // nolint
+		_ = getDocSize(qm.Project)
 	}
 
 	if NamespaceIsCommand(qm.Namespace) {

@@ -40,7 +40,7 @@ func (m *killCursorsMessage) Serialize() []byte {
 
 func (h *MessageHeader) parseKillCursorsMessage(buf []byte) (Message, error) {
 	if len(buf) < 8 {
-		return nil, errors.New("invalid kill cursors message -- message must have length of at least 8 bytes")
+		return nil, errors.New("invalid kill cursors message - message must have length of at least 8 bytes")
 	}
 
 	loc := 0
@@ -55,7 +55,7 @@ func (h *MessageHeader) parseKillCursorsMessage(buf []byte) (Message, error) {
 	loc += 4
 
 	if len(buf[loc:]) < int(m.NumCursors)*8 {
-		return nil, errors.Errorf("invalid kill cursors message -- NumCursors = %d is larger than number of cursors in message", m.NumCursors)
+		return nil, errors.Errorf("invalid kill cursors message - NumCursors = %d is larger than number of cursors in message", m.NumCursors)
 	}
 
 	m.CursorIds = make([]int64, int(m.NumCursors))
