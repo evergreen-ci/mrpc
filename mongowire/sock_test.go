@@ -9,7 +9,7 @@ import (
 	"github.com/evergreen-ci/birch"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func TestReadMessage(t *testing.T) {
