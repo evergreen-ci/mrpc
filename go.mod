@@ -1,6 +1,6 @@
 module github.com/evergreen-ci/mrpc
 
-go 1.24
+go 1.20
 
 require (
 	github.com/evergreen-ci/birch v0.0.0-20220401151432-c792c3d8e0eb
